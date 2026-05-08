@@ -1,0 +1,37 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+backend/node_modules/
+frontend/node_modules/
+
+# Logs
+logs/
+*.log
+
+# Build artifacts
+backend/dist/
+frontend/dist/
+frontend/.vite/
+
+# Compiled binaries (downloaded separately)
+whisper/
+piper/
+
+# Test artifacts
+test.wav
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Misc
+{backend/
