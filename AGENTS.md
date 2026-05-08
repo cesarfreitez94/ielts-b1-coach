@@ -58,6 +58,26 @@ cd frontend && npm run dev
 - `docker-compose.yml` does NOT start Whisper/Piper — those are separate manual processes
 - Database user: `ielts_user`, DB: `ielts_b1`, default password in setup: `ielts123`
 
+## Testing & Logging Plan
+
+See `docs/TESTING_LOGGING_PLAN.md` for the full implementation roadmap.
+
+**Framework:** Vitest (full stack) | **E2E:** Playwright (critical flows) | **Logging:** Pino (structured)
+**TypeScript:** strict mode | **Log viewer:** `/admin/logs` (admin-only)
+
+### Phase Summary
+
+| Phase | Focus | Effort |
+|-------|-------|--------|
+| P0 | Prerequisites (Vitest, TypeScript strict) | 3h |
+| P1 | Backend structured logging (Pino + correlation IDs) | 3h |
+| P2 | Backend unit + integration tests | 10h |
+| P3 | Frontend component + page tests | 12h |
+| P4 | Client-side error capture + storage | 4h |
+| P5 | Admin log viewer page | 4h |
+| P6 | Playwright E2E (critical flows) | 8h |
+| P7 | GitHub Actions CI/CD | 2h |
+
 ## Verify Services
 
 ```bash
