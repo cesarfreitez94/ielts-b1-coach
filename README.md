@@ -48,9 +48,71 @@ El objetivo es guiar al usuario a través de un programa de ~500 horas de estudi
 
 | Servicio | Proveedores |
 |----------|-------------|
-| LLM Tutor | Kimi (Moonshot), Anthropic, OpenAI, Mistral |
+| LLM Tutor | Kimi (Moonshot), DeepSeek, Anthropic, OpenAI, Mistral |
 | TTS Audio | Piper TTS (local) |
 | Speech-to-Text | Whisper.cpp (local) |
+
+## Testing & Quality
+
+| Tipo | Framework | Cobertura |
+|------|-----------|-----------|
+| Unit + Integration | Vitest | backend (14 test files, ~48 tests) |
+| Component + Page | Vitest + React Testing Library | frontend (13 test files) |
+| E2E (critical flows) | Playwright | auth, speaking, writing, settings, vocab-achievements |
+| TypeScript | tsc --noEmit | strict mode (frontend) |
+| CI/CD | GitHub Actions | `.github/workflows/test.yml` |
+
+**Client error logging:** Buffer-to-localStorage on network failure, auto-flush on reconnect.
+**Structured logging:** Pino with correlation IDs (X-Request-ID), request logging, redaction of auth headers/API keys.
+**Admin log viewer:** `/admin/logs` page for `is_admin: true` users only.
+**Test commands:**
+```bash
+cd frontend && npm run typecheck   # TypeScript strict check
+npm test                            # Backend unit tests
+npm run test:e2e                    # E2E tests (Playwright)
+cd frontend && npm test             # Frontend component tests
+```
+
+## Development Methodology
+
+Este proyecto usa **OpenSpec** como framework de spec-driven development (SDD) combinado con **TDD**.
+
+### Ciclo de trabajo
+
+```
+1. /opsx-propose "nombre-feature"  → Genera proposal + design + tasks
+2. Revisar y ajustar artifacts
+3. /opsx-apply                      → Empezar implementación
+4. Por cada task:
+   - Escribir SPEC.md con scenarios (GHERKIN)
+   - Escribir tests → estado RED
+   - Implementar → estado GREEN
+   - Refactor si necesario
+5. /opsx-archive                    → Archivar change completado
+```
+
+### Estructura de features
+
+```
+backend/src/features/<feature>/
+├── SPEC.md                    # Especificación con GHERKIN
+├── <feature>Service.test.js   # Tests (TDD)
+├── <feature>Service.js        # Implementación
+└── index.js                   # Export único
+```
+
+### Comandos OpenSpec
+
+| Comando | Descripción |
+|---------|-------------|
+| `openspec list` | Lista changes activos |
+| `openspec validate --all` | Valida todos los specs |
+| `npx -y @fission-ai/openspec@latest new change <nombre>` | Crear nuevo change |
+
+### Recursos
+
+- Docs: https://openspec.dev
+- CLI: `npm install -g @fission-ai/openspec@latest` (requiere Node 20+)
 
 ---
 
@@ -88,6 +150,14 @@ La app usa **servicios locales** para speech (STT/TTS) que no requieren API keys
 
 ```
 ielts-app/
+├── openspec/
+│   ├── specs/                  # Living specs (captured requirements)
+│   │   └── vocabulary-spaced-repetition/
+│   │       └── spec.md         # GHERKIN scenarios
+│   └── changes/                # Change proposals
+├── .opencode/
+│   ├── commands/              # Slash commands (opsx-propose, opsx-apply, etc.)
+│   └── skills/               # OpenSpec skills
 ├── docker/
 │   ├── init.sql              # Schema + seed de BD
 │   └── nginx.conf            # Proxy reverso + SSL
@@ -98,11 +168,12 @@ ielts-app/
 │       ├── index.js          # Entry point + cron jobs
 │       ├── db/pool.js        # Conexión PostgreSQL
 │       ├── middleware/
-│       │   └── auth.js       # Middleware JWT
+│       │   ├── auth.js       # Middleware JWT
+│       │   └── requestId.js  # Correlation ID middleware (X-Request-ID)
 │       ├── services/
-│       │   ├── llmService.js # Integración LLM (Kimi)
-│       │   ├── sttService.js # Integración Whisper (local)
-│       │   └── ttsService.js # Integración Piper (local)
+│       │   ├── llmService.js # Integración LLM (multi-provider)
+│       │   ├── whisperService.js # Integración Whisper (local)
+│       │   └── piperService.js  # Integración Piper (local)
 │       ├── agents/
 │       │   ├── evaluationAgent.js  # Evalúa progreso cada domingo
 │       │   └── plannerAgent.js     # Genera tareas del día con IA
@@ -111,17 +182,42 @@ ielts-app/
 │           ├── config.js     # Panel de API keys (cifradas)
 │           ├── vocabulary.js # Flashcards + SRS SM-2
 │           ├── speaking.js   # STT + evaluación IA
+│           ├── writing.js    # Writing con evaluación IA
+│           ├── tutor.js      # Chat con tutor IA
 │           ├── gamification.js # Logros + XP
 │           ├── evaluation.js # Agente evaluador
-│           └── progress.js   # Dashboard + tiempo
+│           ├── progress.js   # Dashboard + tiempo
+│           └── logs.js       # Client error capture + log viewer API
 ├── frontend/
 │   ├── Dockerfile
 │   ├── package.json
 │   └── src/
-│       ├── services/api.js   # Cliente HTTP
-│       ├── stores/store.js   # Estado global (Zustand)
-│           └── pages/
-│               └── Settings.tsx
+│       ├── services/
+│       │   ├── api.js       # Cliente HTTP (con interceptor de errores)
+│       │   ├── logger.ts    # Client-side error logger (buffer-to-localStorage)
+│       │   └── logsApi.ts   # Logs API client
+│       ├── stores/
+│       │   ├── authStore.ts # Auth state (Zustand + persist)
+│       │   └── store.js     # Estado global legacy
+│       ├── components/
+│       │   ├── ErrorBoundary.tsx   # Captura errores + envía a /api/logs/client-error
+│       │   ├── ProtectedRoute.tsx  # Auth guard
+│       │   ├── ProtectedAdminRoute.tsx # Admin-only guard
+│       │   ├── Layout.tsx   # Navbar con nav links
+│       │   ├── LevelBadge.tsx # XP-based level badge
+│       │   ├── ProgressBar.tsx
+│       │   ├── StatsCard.tsx
+│       │   └── RecentAchievements.tsx
+│       └── pages/
+│           ├── Login.tsx
+│           ├── Dashboard.tsx
+│           ├── Vocabulary.tsx
+│           ├── Speaking.tsx
+│           ├── Writing.tsx
+│           ├── Tutor.tsx
+│           ├── Achievements.tsx
+│           ├── Settings.tsx    # Config LLM provider + API keys
+│           └── AdminLogs.tsx   # Admin error telemetry (`/admin/logs`)
 ├── whisper/                  # Whisper.cpp (compilado)
 │   ├── whisper-server       # Servidor STT
 │   ├── whisper-cli          # CLI tool
@@ -189,6 +285,12 @@ python3 -m piper.http_server -m piper/models/en_US-lessac-medium.onnx --port 500
 # Arrancar app
 cd backend && npm run dev
 cd frontend && npm run dev
+
+# Tests
+npm test                             # Backend unit tests (Vitest)
+cd frontend && npm test              # Frontend component/page tests
+npm run test:e2e                    # E2E tests (Playwright)
+cd frontend && npm run typecheck   # TypeScript strict check
 ```
 
 ---
@@ -369,6 +471,13 @@ El usuario accede a `/settings` desde la app y puede configurar:
 | GET | `/api/config/keys` | Obtener API keys del usuario |
 | PUT | `/api/config/keys` | Actualizar API keys |
 | POST | `/api/config/test` | Probar configuración de IA |
+
+### Logs (Admin)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/api/logs/client-error` | Capturar error de cliente |
+| GET | `/api/logs` | Listar errores (level, page, from, to, limit, offset) |
 
 ---
 

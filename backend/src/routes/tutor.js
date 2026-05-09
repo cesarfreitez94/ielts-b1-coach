@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { requireAuth } from '../middleware/auth.js';
 import { pool } from '../db/pool.js';
 import { llmChat } from '../services/llmService.js';
+import { logger } from '../logger.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -53,7 +54,7 @@ INSTRUCCIONES:
 
     res.json({ reply, session_id: sid });
   } catch (e) {
-    console.error('[tutor/chat] userId:', req.user.id, 'session_id:', sid, 'messageLength:', message?.length, 'error:', e.message, e.stack);
+    logger.error({ userId: req.user.id, sessionId: sid, messageLength: message?.length, error: e.message, stack: e.stack }, '[tutor/chat] Error');
     res.status(500).json({ error: e.message });
   }
 });

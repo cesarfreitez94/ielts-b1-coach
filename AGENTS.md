@@ -14,6 +14,12 @@ cd backend && npm run dev
 
 # Frontend only (port 3000)
 cd frontend && npm run dev
+
+# Tests
+npm test                             # Backend unit tests (Vitest)
+cd frontend && npm test              # Frontend tests
+npm run test:e2e                     # E2E tests (Playwright, from root)
+cd frontend && npm run typecheck    # TypeScript strict check
 ```
 
 ## Service URLs
@@ -26,6 +32,7 @@ cd frontend && npm run dev
 | Piper TTS | http://localhost:5000 |
 | PostgreSQL | localhost:5432 |
 | Redis | localhost:6379 |
+| Admin Log Viewer | http://localhost:3000/admin/logs |
 
 ## Architecture
 
@@ -43,6 +50,11 @@ cd frontend && npm run dev
 - `docker/init.sql` — full PostgreSQL schema + seed data (vocabulary, achievements)
 - `scripts/download-models.sh` — compiles Whisper.cpp from source v1.8.4 + downloads GGML model + Piper voice
 - `frontend/src/pages/Settings.tsx` — user-facing config page for LLM provider and API keys
+- `backend/src/logger.js` — Pino structured logger with auth/API key redaction
+- `backend/src/middleware/requestId.js` — Correlation ID middleware (X-Request-ID)
+- `backend/src/routes/logs.js` — Client error capture + log viewer API endpoints
+- `frontend/src/services/logger.ts` — Client-side error logger (buffer-to-localStorage)
+- `frontend/src/pages/AdminLogs.tsx` — Admin error telemetry page at `/admin/logs`
 
 ## User Settings
 
@@ -62,21 +74,52 @@ cd frontend && npm run dev
 
 See `docs/TESTING_LOGGING_PLAN.md` for the full implementation roadmap.
 
-**Framework:** Vitest (full stack) | **E2E:** Playwright (critical flows) | **Logging:** Pino (structured)
-**TypeScript:** strict mode | **Log viewer:** `/admin/logs` (admin-only)
+**Framework:** Vitest (full stack) | **E2E:** Playwright (critical flows)
+**Logging:** Pino (structured) | **TypeScript:** strict mode
+**Log viewer:** `/admin/logs` (admin-only) | **CI/CD:** `.github/workflows/test.yml`
 
 ### Phase Summary
 
-| Phase | Focus | Effort |
+| Phase | Focus | Status |
 |-------|-------|--------|
-| P0 | Prerequisites (Vitest, TypeScript strict) | 3h |
-| P1 | Backend structured logging (Pino + correlation IDs) | 3h |
-| P2 | Backend unit + integration tests | 10h |
-| P3 | Frontend component + page tests | 12h |
-| P4 | Client-side error capture + storage | 4h |
-| P5 | Admin log viewer page | 4h |
-| P6 | Playwright E2E (critical flows) | 8h |
-| P7 | GitHub Actions CI/CD | 2h |
+| P0 | ✅ Prerequisites (Vitest, TypeScript strict) | Done |
+| P1 | ✅ Backend structured logging (Pino + correlation IDs) | Done |
+| P2 | ✅ Backend unit + integration tests | Done |
+| P3 | ✅ Frontend component + page tests | Done |
+| P4 | ✅ Client-side error capture + storage | Done |
+| P5 | ✅ Admin log viewer page | Done |
+| P6 | ✅ Playwright E2E (critical flows) | Done |
+| P7 | ✅ GitHub Actions CI/CD | Done |
+
+**Test counts:** 14 backend test files (~48 tests) | 13 frontend test files | 5 E2E specs
+
+## OpenSpec SDD+TDD Workflow
+
+### Commands
+- `/opsx-propose` — Create new change proposal
+- `/opsx-explore` — Investigate ideas without implementing
+- `/opsx-apply` — Start implementing tasks from a change
+- `/opsx-archive` — Archive completed change
+
+### Workflow
+1. `npx -y @fission-ai/openspec@latest new change <name>` — Create change
+2. `/opsx-propose "description"` — Generate proposal/design/tasks
+3. Review and approve artifacts
+4. `/opsx-apply` — Execute TDD cycle per task
+5. `/opsx-archive` — Finalize when done
+
+### Feature Structure (Backend)
+```
+backend/src/features/<feature>/
+├── SPEC.md                    # GHERKIN scenarios
+├── <feature>Service.test.js   # Tests FIRST (RED)
+├── <feature>Service.js        # Implementation (GREEN)
+└── index.js                   # Single export
+```
+
+### OpenSpec Artifacts
+- `openspec/specs/` — Living specs (captured requirements)
+- `openspec/changes/` — Change proposals with proposal.md, design.md, tasks.md
 
 ## Verify Services
 
