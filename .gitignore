@@ -6,6 +6,7 @@
 # Dependencies
 backend/node_modules/
 frontend/node_modules/
+node_modules/
 
 # Logs
 logs/
@@ -33,5 +34,18 @@ Thumbs.db
 *.swp
 *.swo
 
+# OpenSpec (generated artifacts)
+openspec/changes/
+openspec/.cache/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Coverage
+coverage/
+frontend/coverage/
+
 # Misc
-{backend/
+*.tgz
+.cache/
