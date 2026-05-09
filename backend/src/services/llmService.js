@@ -3,13 +3,18 @@ import OpenAI from 'openai';
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { pool } from '../db/pool.js';
+import { logger } from '../logger.js';
 
 const KIMI_API_KEY = process.env.KIMI_API_KEY;
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-if (!ENCRYPTION_KEY) throw new Error('ENCRYPTION_KEY environment variable is required');
-if (ENCRYPTION_KEY.length < 30) throw new Error('ENCRYPTION_KEY must be at least 30 characters');
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || '';
+if (!ENCRYPTION_KEY) {
+  if (process.env.NODE_ENV !== 'test') throw new Error('ENCRYPTION_KEY environment variable is required');
+}
+if (ENCRYPTION_KEY && ENCRYPTION_KEY.length < 30) {
+  if (process.env.NODE_ENV !== 'test') throw new Error('ENCRYPTION_KEY must be at least 30 characters');
+}
 
 export function decryptKey(encrypted) {
   if (!encrypted) return null;
@@ -50,13 +55,13 @@ export async function getUserConfig(userId) {
 export async function llmChat({ userId, messages, system, maxTokens = 1000 }) {
   const config = await getUserConfig(userId);
   if (!config) {
-    console.error('[llmChat] No config found for user:', userId);
+    logger.error({ userId, provider: config.llm_provider, hasUserKey: !!config.llm_api_key_enc, hasGlobalKey: !!KIMI_API_KEY }, '[llmChat] No config found for user');
     throw new Error('No config found for user — configure your AI provider in Settings');
   }
 
   const apiKey = resolveApiKey(config.llm_provider, config.llm_api_key_enc);
   if (!apiKey) {
-    console.error('[llmChat] No API key resolved — provider:', config.llm_provider, 'userKey present:', !!config.llm_api_key_enc, 'global KIMI present:', !!KIMI_API_KEY);
+    logger.error({ provider: config.llm_provider, hasUserKey: !!config.llm_api_key_enc, globalKeyPresent: !!KIMI_API_KEY }, '[llmChat] No API key resolved');
     throw new Error(`No API key for ${config.llm_provider}. Add your API key in Settings or set KIMI_API_KEY in .env`);
   }
 
@@ -66,7 +71,7 @@ export async function llmChat({ userId, messages, system, maxTokens = 1000 }) {
     model = PROVIDER_MODELS[provider]?.default;
   }
 
-  console.error('[llmChat] Calling provider:', provider, 'model:', model, 'userId:', userId);
+  logger.debug({ provider, model, userId }, '[llmChat] Calling provider');
 
   try {
     if (provider === 'anthropic') {
@@ -115,7 +120,7 @@ export async function llmChat({ userId, messages, system, maxTokens = 1000 }) {
 
     throw new Error(`Unknown LLM provider: ${provider}`);
   } catch (e) {
-    console.error(`[llmChat] Provider ${provider} failed:`, e.message, '| model:', model, '| userId:', userId);
+    logger.error({ provider, model, userId, error: e.message }, '[llmChat] Provider failed');
     throw e;
   }
 }

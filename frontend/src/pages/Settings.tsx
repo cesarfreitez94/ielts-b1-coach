@@ -44,17 +44,17 @@ export default function Settings() {
     }
   }, [config]);
 
-  const updateMutation = useMutation({
-    mutationFn: (data) => configAPI.update(data),
+  const updateMutation = useMutation<void, Error, { llm_provider: string; llm_model: string; llm_api_key?: string; daily_goal_minutes: number }>({
+    mutationFn: (data) => configAPI.update(data).then(() => undefined),
     onSuccess: () => {
       toast.success('Settings saved');
     },
-    onError: (err) => {
+    onError: (err: any) => {
       toast.error(err.response?.data?.error || 'Failed to save settings');
     },
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateMutation.mutate({
       llm_provider: form.llm_provider,
@@ -64,8 +64,8 @@ export default function Settings() {
     });
   };
 
-  const handleProviderChange = (provider) => {
-    const defaultModel = MODELS[provider]?.[0] || '';
+  const handleProviderChange = (provider: string) => {
+    const defaultModel = MODELS[provider as keyof typeof MODELS]?.[0] || '';
     setForm({ ...form, llm_provider: provider, llm_model: defaultModel });
   };
 
@@ -107,7 +107,7 @@ export default function Settings() {
               onChange={(e) => setForm({ ...form, llm_model: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
             >
-              {(MODELS[form.llm_provider] || []).map((m) => (
+              {(MODELS[form.llm_provider as keyof typeof MODELS] || []).map((m: string) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>

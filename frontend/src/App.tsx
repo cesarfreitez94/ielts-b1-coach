@@ -11,6 +11,8 @@ import Writing from './pages/Writing';
 import Tutor from './pages/Tutor';
 import Achievements from './pages/Achievements';
 import Settings from './pages/Settings';
+import AdminLogs from './pages/AdminLogs';
+import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 
 function App() {
   const { token } = useAuthStore();
@@ -27,6 +29,7 @@ function App() {
           <Route path="tutor" element={<Tutor />} />
           <Route path="achievements" element={<Achievements />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="/admin/logs" element={<ProtectedAdminRoute><AdminLogs /></ProtectedAdminRoute>} />
         </Route>
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

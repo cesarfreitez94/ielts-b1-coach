@@ -18,13 +18,18 @@ export default function Layout() {
   const { user, logout } = useAuthStore();
   const location = useLocation();
 
+  const allNavItems = [
+    ...navItems,
+    ...(user?.is_admin ? [{ path: '/admin/logs', label: 'Admin', icon: Settings }] : []),
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between h-16">
             <div className="flex space-x-8">
-              {navItems.map((item) => (
+              {allNavItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}

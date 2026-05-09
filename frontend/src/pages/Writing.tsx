@@ -15,9 +15,9 @@ export default function Writing() {
   const [userText, setUserText] = useState('');
   const [evaluation, setEvaluation] = useState<any>(null);
 
-  const evaluateMutation = useMutation({
+  const evaluateMutation = useMutation<any, Error, void>({
     mutationFn: () => writingAPI.evaluate(userText, prompt),
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       setEvaluation(response.data);
       toast.success('Writing evaluated!');
     },

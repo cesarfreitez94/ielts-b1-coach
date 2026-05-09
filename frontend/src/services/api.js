@@ -1,4 +1,5 @@
 import axios from 'axios';
+import clientLogger from './logger';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
@@ -16,6 +17,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
+    clientLogger.error(`API Error: ${err.config?.url}`, {
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+    });
     if (err.response?.status === 401) {
       localStorage.removeItem('ielts_token');
       window.location.href = '/login';

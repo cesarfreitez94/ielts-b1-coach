@@ -14,6 +14,7 @@ CREATE TABLE users (
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   name VARCHAR(100) NOT NULL,
+  is_admin BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   last_active TIMESTAMPTZ DEFAULT NOW()
 );
@@ -268,6 +269,24 @@ CREATE TABLE xp_transactions (
   description TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ----------------------------------------------------------------
+-- CLIENT ERROR LOGGING
+-- ----------------------------------------------------------------
+CREATE TABLE client_errors (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  page VARCHAR(255),
+  error_type VARCHAR(100),
+  message TEXT,
+  stack TEXT,
+  metadata JSONB,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_client_errors_created_at ON client_errors(created_at DESC);
+CREATE INDEX idx_client_errors_user_id ON client_errors(user_id);
 
 -- ----------------------------------------------------------------
 -- SEED ACHIEVEMENTS

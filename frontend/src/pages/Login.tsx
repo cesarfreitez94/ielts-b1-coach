@@ -21,7 +21,9 @@ export default function Login() {
     try {
       const endpoint = isRegister ? 'register' : 'login';
       const payload = isRegister ? { email, password, name } : { email, password };
-      const { data } = await authAPI[endpoint](email, password, isRegister ? name : undefined);
+      const { data } = isRegister
+        ? await authAPI.register(email, password, name)
+        : await authAPI.login(email, password);
 
       setAuth(data.token, data.user);
       toast.success(isRegister ? 'Account created!' : 'Welcome back!');

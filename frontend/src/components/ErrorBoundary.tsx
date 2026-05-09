@@ -1,5 +1,6 @@
 import { Component, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import clientLogger from '../services/logger';
 
 interface Props {
   children: ReactNode;
@@ -18,6 +19,10 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(): State {
     return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    clientLogger.captureError(error, { componentStack: errorInfo.componentStack });
   }
 
   render() {

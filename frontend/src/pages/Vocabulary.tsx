@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -15,15 +15,16 @@ export default function Vocabulary() {
   const { data, isLoading } = useQuery({
     queryKey: ['vocabulary-due'],
     queryFn: () => vocabAPI.getDue(),
-    onSuccess: (data) => {
-      if (data.data?.length > 0) setCurrentCard(data.data[0]);
-    },
   });
 
-  const answerMutation = useMutation({
-    mutationFn: ({ vocab_id, quality }: { vocab_id: string; quality: number }) =>
+  useEffect(() => {
+    if (data?.data && data.data.length > 0 && !currentCard) setCurrentCard(data.data[0]);
+  }, [data, currentCard]);
+
+  const answerMutation = useMutation<unknown, Error, { vocab_id: number; quality: number }>({
+    mutationFn: ({ vocab_id, quality }) =>
       vocabAPI.answer(vocab_id, quality),
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       const remaining = response.data?.remaining || 0;
       if (remaining > 0) {
         const nextCard = data?.data?.find((c: any) => c.id !== currentCard?.id);

@@ -12,18 +12,18 @@ export default function Speaking() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  const transcribeMutation = useMutation({
+  const transcribeMutation = useMutation<any, Error, Blob>({
     mutationFn: (audioBlob: Blob) => speakingAPI.transcribe(audioBlob),
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       setTranscript(response.data?.text || 'No transcript available');
       toast.success('Transcribed!');
     },
     onError: () => toast.error('Transcription failed'),
   });
 
-  const evaluateMutation = useMutation({
+  const evaluateMutation = useMutation<any, Error, any>({
     mutationFn: (data: any) => speakingAPI.evaluate(data),
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       setEvaluation(response.data);
       toast.success('Evaluated!');
     },
